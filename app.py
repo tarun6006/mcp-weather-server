@@ -1,54 +1,64 @@
 import os
 import requests
 from flask import Flask, request, jsonify
+from dotenv import load_dotenv
+from queue import Queue
+import mcp_utils
 from mcp_utils.core import MCPServer
 from mcp_utils.schema import GetPromptResult, Message, TextContent, CallToolResult
-from dotenv import load_dotenv
+from geopy.geocoders import Nominatim
+from requests.exceptions import HTTPError, RequestException
 
 load_dotenv()
-USER_AGENT = os.getenv("NWS_USER_AGENT", "myapp@example.com")
+USER_AGENT = os.getenv("NWS_USER_AGENT", "test@example.com")
 
-mcp = MCPServer("weather-server", "1.0")
+app = Flask(__name__)
+response_queue = Queue()
+mcp = MCPServer("weather-server", "1.0", response_queue)
 
-@mcp.prompt()
-def weather_prompt(city: str = None, zip_code: str = None) -> GetPromptResult:
-    desc = f"Get weather for {city or zip_code}"
-    msg = TextContent(text=f"Fetch weather for {city or zip_code}")
-    return GetPromptResult(description=desc, messages=[Message(role="user", content=msg)])
 
 @mcp.tool()
 def get_weather(city: str = None, zip_code: str = None) -> CallToolResult:
-    # geocode via weather.gov points endpoint
-    if zip_code:
-        # use zippopotam.us for lat/lon lookup
-        r = requests.get(f"https://api.zippopotam.us/us/{zip_code}")
-        r.raise_for_status()
-        data = r.json()
-        lat, lon = data['places'][0]['latitude'], data['places'][0]['longitude']
-    else:
-        # use geocode service or skip – for brevity use city name geocoding via geopy is example
-        from geopy.geocoders import Nominatim
-        geol = Nominatim(user_agent="weather-app")
-        loc = geol.geocode(city)
-        lat, lon = loc.latitude, loc.longitude
+    try:
+        if zip_code:
+            resp = requests.get(f"https://api.zippopotam.us/us/{zip_code}", timeout=5)
+            resp.raise_for_status()
+            data = resp.json()
+            lat = data['places'][0]['latitude']
+            lon = data['places'][0]['longitude']
+        elif city:
+            geolocator = Nominatim(user_agent="weather-mcp")
+            loc = geolocator.geocode(city, timeout=5)
+            if not loc:
+                raise ValueError("Location not found")
+            lat, lon = loc.latitude, loc.longitude
+        else:
+            raise ValueError("Provide city or zip_code")
 
-    headers = {"User-Agent": USER_AGENT}
-    pt = requests.get(f"https://api.weather.gov/points/{lat},{lon}", headers=headers)
-    pt.raise_for_status()
-    forecast_url = pt.json()['properties']['forecast']
-    f = requests.get(forecast_url, headers=headers)
-    f.raise_for_status()
-    periods = f.json()['properties']['periods']
-    summary = periods[0]['shortForecast']
-    temp = periods[0]['temperature']
-    result = f"{summary}, {temp}°{periods[0]['temperatureUnit']}"
-    return CallToolResult(content=result)
+        headers = {"User-Agent": USER_AGENT}
+        point = requests.get(f"https://api.weather.gov/points/{lat},{lon}", headers=headers, timeout=5)
+        point.raise_for_status()
+        forecast_url = point.json()['properties']['forecast']
 
-app = Flask(__name__)
+        forecast = requests.get(forecast_url, headers=headers, timeout=5)
+        forecast.raise_for_status()
+        data = forecast.json()['properties']['periods'][0]
+
+        forecast_text = f"{data['name']}: {data['shortForecast']} at {data['temperature']}°{data['temperatureUnit']}"
+        return CallToolResult(content=[TextContent(type='text', text=forecast_text)])
+
+    except Exception as e:
+        return CallToolResult(content=[TextContent(type='text', text=f"Error: {str(e)}")])
+
+
 @app.route("/mcp", methods=["POST"])
-def mcp_route():
-    resp = mcp.handle_message(request.get_json())
-    return jsonify(resp.model_dump(exclude_none=True))
+def handle_mcp():
+    body = request.get_json()
+    response = mcp.handle_message(body)
+    return jsonify(response.model_dump(exclude_none=True)), 200
+
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
+    # Use port 8080 for Google Cloud deployment, 5001 for local development
+    port = int(os.environ.get("PORT", 5001))
+    app.run(host="0.0.0.0", port=port)
