@@ -1,0 +1,5 @@
+Flask
+mcp-utils>=0.1
+requests
+geopy
+python-dotenv
