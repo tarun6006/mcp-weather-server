@@ -31,13 +31,15 @@ RUN chown -R appuser:appuser /app
 # Switch to non-root user for security
 USER appuser
 
-# Expose application port
-EXPOSE 5001
+# Expose port 8080 for Google Cloud deployment
+EXPOSE 8080
 
 # Configure environment variables for Flask application
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=1
+# Set PORT to 8080 for Google Cloud deployment
+ENV PORT=8080
 
 # Start the Flask application
 CMD ["python", "app.py"]
