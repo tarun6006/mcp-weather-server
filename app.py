@@ -14,7 +14,25 @@ USER_AGENT = os.getenv("NWS_USER_AGENT", "test@example.com")
 
 app = Flask(__name__)
 response_queue = Queue()
-mcp = MCPServer("weather-server", "1.0", response_queue)
+
+# Initialize MCPServer with error handling for different versions
+try:
+    # Try the original pattern with response_queue
+    mcp = MCPServer("weather-server", "1.0", response_queue)
+except TypeError as e:
+    print(f"First attempt failed: {e}")
+    try:
+        # Try without response_queue (some versions might not need it)
+        mcp = MCPServer("weather-server", "1.0")
+        # Set response_queue as attribute if needed
+        if hasattr(mcp, 'response_queue'):
+            mcp.response_queue = response_queue
+    except Exception as e2:
+        print(f"Second attempt failed: {e2}")
+        # Try with keyword arguments
+        mcp = MCPServer(name="weather-server", version="1.0")
+        if hasattr(mcp, 'response_queue'):
+            mcp.response_queue = response_queue
 
 
 @mcp.tool()
