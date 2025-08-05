@@ -1,5 +1,5 @@
-Flask
-mcp-utils>=0.1
-requests
-geopy
-python-dotenv
+Flask==3.0.0
+python-dotenv==1.0.0
+requests==2.31.0
+geopy==2.4.0
+mcp-utils>=0.1.0
