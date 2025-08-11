@@ -1,12 +1,30 @@
 """Configuration and environment variable management for Weather MCP Server"""
 import os
 import logging
+import yaml
 from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
+
+# Load YAML configuration for constants and complex data structures
+def load_config():
+    """Load configuration from YAML file"""
+    config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
+    try:
+        with open(config_path, 'r', encoding='utf-8') as file:
+            return yaml.safe_load(file)
+    except FileNotFoundError:
+        logger.warning(f"Configuration file not found: {config_path}. Using defaults.")
+        return {}
+    except yaml.YAMLError as e:
+        logger.error(f"Error parsing YAML configuration: {e}")
+        return {}
+
+# Load application configuration (constants, not environment-sensitive values)
+CONFIG = load_config()
 
 # User Agent for API requests
 USER_AGENT = os.getenv("NWS_USER_AGENT", "test@example.com")
