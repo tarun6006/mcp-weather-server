@@ -1,0 +1,47 @@
+# Weather MCP Server Configuration
+# Note: API endpoints and sensitive values are configured via environment variables
+# This file is for application constants and complex data structures
+
+# Application Metadata
+app:
+  name: "weather-mcp-server"
+  version: "1.0.0"
+  description: "Weather MCP Server with National Weather Service integration"
+
+# Response formatting constants
+response_formats:
+  temperature_units: ["fahrenheit", "celsius"]
+  default_temperature_unit: "fahrenheit"
+  
+# Error messages and constants
+error_messages:
+  location_not_found: "Unable to find location. Please check the city name or ZIP code."
+  weather_service_unavailable: "Weather service is temporarily unavailable. Please try again later."
+  invalid_coordinates: "Invalid coordinates provided."
+  geocoding_failed: "Failed to resolve location coordinates."
+  
+# API request constants
+api_constants:
+  max_retries: 3
+  default_timeout: 10
+  user_agent_required: true
+  
+  # Future: Complex data structures for weather parsing
+  # weather_condition_mappings: {}
+  # alert_severity_levels: {}
+  # forecast_period_types: {}
+
+# Logging configuration (non-sensitive settings)
+logging:
+  # Log levels are set via environment variables
+  # This section is for future logging configuration
+  excluded_paths: ["/health", "/metrics"]
+  request_logging: true
+  
+# Future expansion areas
+# geocoding:
+#   # Complex geocoding rules and mappings
+# weather_parsing:
+#   # Weather data transformation rules
+# caching:
+#   # Cache configuration (when implemented with external cache)

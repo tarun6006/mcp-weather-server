@@ -39,5 +39,17 @@ ENV PYTHONUNBUFFERED=1
 # Set PORT to 8080 for Google Cloud deployment
 ENV PORT=8080
 
-# Start the Flask application with gunicorn for production
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "--threads", "4", "--timeout", "60", "--keep-alive", "2", "--access-logfile", "-", "--error-logfile", "-", "app:app"]
+# Optimized gunicorn configuration for better performance
+CMD ["gunicorn", \
+    "--bind", "0.0.0.0:8080", \
+    "--workers", "2", \
+    "--threads", "8", \
+    "--timeout", "60", \
+    "--keep-alive", "10", \
+    "--max-requests", "1000", \
+    "--max-requests-jitter", "50", \
+    "--preload", \
+    "--worker-connections", "1000", \
+    "--access-logfile", "-", \
+    "--error-logfile", "-", \
+    "app:app"]
