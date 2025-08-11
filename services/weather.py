@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional
 from mcp_utils.schema import CallToolResult, TextContent
 from services.geocoding import GeocodingService
 from config.settings import (
+    CONFIG,
     WEATHER_API_HOST, WEATHER_API_PORT, WEATHER_API_PROTOCOL, 
     WEATHER_API_POINTS_PATH, USER_AGENT, build_api_url
 )
