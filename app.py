@@ -1,3 +1,7 @@
+"""
+Refactored Weather MCP Server
+Modular architecture with separated concerns
+"""
 import os
 import logging
 from flask import Flask
